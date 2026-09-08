@@ -20,7 +20,7 @@ class Environment {
     this.puerto = parseInt(process.env.PORT || '3000', 10);
     this.corsPermitido = process.env.CORS_ORIGIN || 'http://localhost:4200';
     this.dbPuerto = parseInt(process.env.DB_PORT || '5432', 10);
-    this.jwtExpiracion = process.env.JWT_EXPIRES_IN || '2h';
+    this.jwtExpiracion = process.env.JWT_EXPIRES_IN || '2m';
 
     this.dbHost = this.obtenerVariableObligatoria('DB_HOST');
     this.dbNombre = this.obtenerVariableObligatoria('DB_NAME');

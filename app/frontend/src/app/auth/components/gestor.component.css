@@ -99,7 +99,6 @@
   color: #00193C;
 }
 
-/* Contenido Principal */
 .main-content {
   flex: 1;
   padding: 40px;
@@ -144,7 +143,6 @@
   font-size: 18px;
 }
 
-/* Tarjetas */
 .summary-cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -181,7 +179,6 @@
 .text-green { color: #056E4B !important; }
 .text-yellow { color: #D7B46F !important; }
 
-/* Paneles Centrales */
 .middle-section {
   display: grid;
   grid-template-columns: 1fr 1.5fr;
@@ -202,7 +199,6 @@
   font-weight: 700;
 }
 
-/* Dona dinámica */
 .donut-chart {
   width: 220px;
   height: 220px;
@@ -257,7 +253,6 @@
 .green-dot { background: #056E4B; }
 .yellow-dot { background: #D7B46F; }
 
-/* Lista de movimientos */
 .list-header {
   display: flex;
   justify-content: space-between;
@@ -310,7 +305,6 @@
   background-color: #f1f5f9;
 }
 
-/* Botones de Acción */
 .action-buttons {
   display: flex;
   gap: 15px;

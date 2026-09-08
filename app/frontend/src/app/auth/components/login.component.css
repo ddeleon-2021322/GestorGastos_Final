@@ -1,14 +1,14 @@
 .split-login-container {
   display: flex;
-  min-height: 100vh; /* Ocupa todo el alto de la pantalla */
-  width: 100%;       /* Ocupa todo el ancho */
+  min-height: 100vh; 
+  width: 100%;      
   margin: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .left-panel {
-  flex: 1; /* Ocupa el 50% del espacio disponible */
-  background-color: #00193C; /* Azul Oscuro del Logo */
+  flex: 1; 
+  background-color: #00193C; 
   color: #FFFFFF;
   padding: 50px 80px;
   display: flex;
@@ -22,15 +22,14 @@
 }
 
 .logo {
-  width: 75px;           /* Ancho del círculo final */
-  height: 75px;          /* Alto del círculo final */
-  border-radius: 50%;    /* Lo hace circular */
+  width: 75px;           
+  height: 75px;          
+  border-radius: 50%;   
   
-  /* AQUÍ ESTÁ EL TRUCO */
-  object-fit: cover;     /* Esto le dice a CSS: recorta todo lo que sobre a los lados */
-  object-position: center; /* Asegura que el chanchito se quede exactamente en el centro */
+  object-fit: cover;    
+  object-position: center; 
   
-  background-color: #FFFFFF; /* Por si acaso queda algún borde transparente */
+  background-color: #FFFFFF; 
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
@@ -47,7 +46,7 @@
 }
 
 .subtitle {
-  color: #056E4B; /* Verde */
+  color: #056E4B; 
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 2px;
@@ -63,20 +62,17 @@
 }
 
 .highlight-green {
-  color: #056E4B; /* Verde para destacar la palabra clave */
+  color: #056E4B;
 }
 
 .description {
   font-size: 18px;
-  color: #cbd5e1; /* Gris claro que contrasta bien sobre azul oscuro */
+  color: #cbd5e1; 
   line-height: 1.6;
 }
 
-/* =========================================
-   PANEL DERECHO (Fondo Blanco)
-   ========================================= */
 .right-panel {
-  flex: 1; /* Ocupa el otro 50% */
+  flex: 1; 
   background-color: #FFFFFF;
   display: flex;
   align-items: center;
@@ -90,7 +86,7 @@
 }
 
 .welcome-text {
-  color: #056E4B; /* Verde */
+  color: #056E4B; 
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 1px;
@@ -99,7 +95,7 @@
 
 .form-wrapper h2 {
   font-size: 36px;
-  color: #00193C; /* Azul Oscuro */
+  color: #00193C;
   margin-bottom: 12px;
   font-weight: 800;
 }
@@ -144,7 +140,7 @@
 .btn-submit {
   width: 100%;
   padding: 16px 20px;
-  background-color: #00193C; /* Azul Oscuro base */
+  background-color: #00193C; 
   color: #FFFFFF;
   border: none;
   border-radius: 8px;
@@ -152,18 +148,18 @@
   font-weight: 600;
   cursor: pointer;
   display: flex;
-  justify-content: space-between; /* Manda la flecha al extremo derecho */
+  justify-content: space-between; 
   align-items: center;
   transition: all 0.3s ease;
   margin-top: 10px;
 }
 
 .btn-submit:hover {
-  background-color: #056E4B; /* Cambia a Verde al pasar el mouse */
+  background-color: #056E4B;
 }
 
 .btn-submit:active {
-  background-color: #D7B46F; /* Toque Dorado al hacer clic */
+  background-color: #D7B46F; 
   color: #00193C;
 }
 
@@ -178,28 +174,25 @@
 }
 
 .register-section a {
-  color: #056E4B; /* Verde para el enlace */
+  color: #056E4B;
   font-weight: 700;
   text-decoration: none;
   transition: color 0.3s ease;
 }
 
 .register-section a:hover {
-  color: #D7B46F; /* Dorado en hover */
+  color: #D7B46F;
 }
 
 .secure-text {
   margin-top: 16px;
   font-size: 12px !important;
-  color: #056E4B !important; /* Verde */
+  color: #056E4B !important; 
 }
 
-/* =========================================
-   RESPONSIVO (Para móviles y tablets pequeñas)
-   ========================================= */
 @media (max-width: 900px) {
   .split-login-container {
-    flex-direction: column; /* Apila los paneles uno sobre otro en móviles */
+    flex-direction: column; 
   }
   
   .left-panel {
