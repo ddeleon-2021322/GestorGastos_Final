@@ -18,7 +18,7 @@ export const inicializarBaseDatos = async () => {
         fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
-      CREATE TABLE IF NOT EXIST gastos(
+      CREATE TABLE IF NOT EXISTS gastos(
         id SERIAL PRIMARY KEY,
         usuario_id INT REFERENCES usuarios(id) on DELETE CASCADE,
         categoria VARCHAR(100) NOT NULL DEFAULT 'Otros',
