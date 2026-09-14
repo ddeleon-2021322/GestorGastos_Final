@@ -1,8 +1,32 @@
-import { Component, OnInit, Inject, PLATFORM_ID, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
+
+interface CategoriaIngreso {
+  nombre: string;
+  monto: number;
+  porcentaje: number;
+  porcentajeDona: number;
+  color: string;
+}
+
+interface BarraTendencia {
+  mes: string;
+  valorTexto: string;
+  fechaTexto: string;
+  altura: string;
+  color: string;
+}
+
+interface TransaccionIngreso {
+  id?: number;
+  categoria: string;
+  titulo: string;
+  monto: number;
+  fecha: string;
+}
 
 @Component({
   selector: 'app-ingresos',
@@ -11,26 +35,30 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
   templateUrl: './ingresos.component.html',
   styleUrls: ['./ingresos.component.css']
 })
-export class IngresosComponent implements OnInit {
+export class IngresosComponent implements OnInit, OnDestroy {
+  readonly TIEMPO_INACTIVIDAD = '2m';
+
   usuario = { nombre: 'Usuario', email: 'usuario@email.com' };
   fechaHoy: string = '';
-  
   totalIngresos: number = 0;
-  transacciones: any[] = [];
-  fuentes: { nombre: string; monto: number; porcentaje: number; color: string }[] = [];
-  tendencia: { mes: string; fecha: string; valor: string; altura: string }[] = [];
+
+  transacciones: TransaccionIngreso[] = [];
+  categorias: CategoriaIngreso[] = [];
+  tendencia: BarraTendencia[] = [];
   fondoDonut: string = 'conic-gradient(#e5e7eb 0% 100%)';
 
-  // Paleta de colores para las diferentes categorías
-  private paletaColores = ['#106b4e', '#c5a365', '#2563eb', '#10b981', '#f59e0b', '#8b5cf6'];
-
-  // Control del modal
-  mostrarModal: boolean = false;
-  nuevoIngreso = { titulo: '', monto: null };
-  guardando: boolean = false;
+  mostrarModalIngreso: boolean = false;
+  nuevoIngreso = { titulo: '', monto: 0, categoria: '' };
 
   private isBrowser: boolean;
-  private apiUrl = 'http://localhost:3000/api/ingresos';
+  private temporizador: any;
+  private apiUrlIngresos = 'http://localhost:3000/api/ingresos';
+
+  private readonly coloresLogo: string[] = [
+    '#056E4B',
+    '#00193C',
+    '#C38C28'
+  ];
 
   constructor(
     private router: Router,
@@ -42,17 +70,24 @@ export class IngresosComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const hoy = new Date();
-    this.fechaHoy = `${hoy.getDate()}/${hoy.getMonth() + 1}/${hoy.getFullYear()}`;
-
     if (this.isBrowser) {
       const token = localStorage.getItem('miToken');
       if (!token) {
         this.router.navigate(['/login']);
         return;
       }
-      this.cargarDatos();
+      this.establecerFechaActual();
+      this.cargarIngresos();
     }
+  }
+
+  ngOnDestroy(): void {
+    if (this.temporizador) clearTimeout(this.temporizador);
+  }
+
+  private establecerFechaActual(): void {
+    const d = new Date();
+    this.fechaHoy = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
   }
 
   private getAuthHeaders(): HttpHeaders {
@@ -60,13 +95,14 @@ export class IngresosComponent implements OnInit {
     return new HttpHeaders().set('Authorization', `Bearer ${token}`);
   }
 
-  cargarDatos(): void {
-    this.http.get<any>(this.apiUrl, { headers: this.getAuthHeaders() }).subscribe({
+  cargarIngresos(): void {
+    this.http.get<any>(this.apiUrlIngresos, { headers: this.getAuthHeaders() }).subscribe({
       next: (data) => {
         this.totalIngresos = Number(data.total) || 0;
         this.transacciones = data.transacciones || [];
-        this.procesarFuentes();
-        this.procesarTendencia();
+
+        this.procesarCategoriasDinamicas();
+        this.procesarTendenciaSemestral();
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -78,107 +114,114 @@ export class IngresosComponent implements OnInit {
     });
   }
 
-  private procesarFuentes(): void {
-    if (!this.transacciones || this.transacciones.length === 0 || !this.totalIngresos) {
-      this.fuentes = [];
+  private procesarCategoriasDinamicas(): void {
+    if (this.totalIngresos === 0 || this.transacciones.length === 0) {
+      this.categorias = [];
       this.fondoDonut = 'conic-gradient(#e5e7eb 0% 100%)';
       return;
     }
 
     const mapa: { [key: string]: number } = {};
     for (const t of this.transacciones) {
-      const titulo = t.titulo || 'Otros';
-      mapa[titulo] = (mapa[titulo] || 0) + Number(t.monto);
+      const cat = (t.categoria && t.categoria.trim() !== '') 
+        ? t.categoria.trim() 
+        : (t.titulo && t.titulo.trim() !== '' ? t.titulo.trim() : 'General');
+
+      mapa[cat] = (mapa[cat] || 0) + Number(t.monto);
     }
 
-    // Calcula porcentajes y asigna un color único a cada barra
-    this.fuentes = Object.keys(mapa)
-      .map((nombre, index) => ({
-        nombre,
-        monto: mapa[nombre],
-        porcentaje: Math.round((mapa[nombre] / this.totalIngresos) * 100),
-        color: this.paletaColores[index % this.paletaColores.length]
-      }))
-      .sort((a, b) => b.monto - a.monto)
+    const top3Nombres = Object.keys(mapa)
+      .sort((a, b) => mapa[b] - mapa[a])
       .slice(0, 3);
 
-    // Genera el gradiente cónico para el gráfico de pastel
-    let acumulado = 0;
-    const partes: string[] = [];
+    const totalTop3 = top3Nombres.reduce((sum, nom) => sum + mapa[nom], 0);
 
-    this.fuentes.forEach((f) => {
-      const inicio = acumulado;
-      acumulado += f.porcentaje;
-      partes.push(`${f.color} ${inicio}% ${acumulado}%`);
+    this.categorias = top3Nombres.map((nombre, index) => {
+      const monto = mapa[nombre];
+      return {
+        nombre,
+        monto,
+        porcentaje: Math.round((monto / this.totalIngresos) * 100),
+        porcentajeDona: Math.round((monto / totalTop3) * 100),
+        color: this.coloresLogo[index]
+      };
     });
 
-    if (acumulado < 100 && this.fuentes.length > 0) {
-      partes.push(`${this.fuentes[this.fuentes.length - 1].color} ${acumulado}% 100%`);
-    }
+    let acumulado = 0;
+    const gradientes: string[] = [];
 
-    this.fondoDonut = `conic-gradient(${partes.join(', ')})`;
+    this.categorias.forEach((c, index) => {
+      const inicio = acumulado;
+      const fin = (index === this.categorias.length - 1) ? 100 : acumulado + c.porcentajeDona;
+      acumulado = fin;
+      gradientes.push(`${c.color} ${inicio}% ${fin}%`);
+    });
+
+    this.fondoDonut = `conic-gradient(${gradientes.join(', ')})`;
   }
 
-  private procesarTendencia(): void {
-    const mesesNombres = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    const resultado = [];
+  private procesarTendenciaSemestral(): void {
+    const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     const ahora = new Date();
+    const resultado: { mes: string; fechaTexto: string; montoNum: number }[] = [];
 
     for (let i = 5; i >= 0; i--) {
-      const d = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
-      const mesIndex = d.getMonth();
-      const anio = d.getFullYear();
+      const ref = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
+      const mIdx = ref.getMonth();
+      const aNum = ref.getFullYear();
 
       const totalMes = this.transacciones
         .filter((t) => {
           const f = new Date(t.fecha);
-          return f.getMonth() === mesIndex && f.getFullYear() === anio;
+          return f.getMonth() === mIdx && f.getFullYear() === aNum;
         })
-        .reduce((acc, curr) => acc + Number(curr.monto), 0);
+        .reduce((sum, curr) => sum + Number(curr.monto), 0);
 
       resultado.push({
-        mes: mesesNombres[mesIndex],
-        fecha: `01/${mesIndex + 1}/${anio}`,
-        montoNum: totalMes,
-        valor: totalMes > 999 ? `Q ${(totalMes / 1000).toFixed(1)}k` : `Q ${totalMes}`,
-        altura: '0%'
+        mes: meses[mIdx],
+        fechaTexto: `01/${(mIdx + 1).toString().padStart(2, '0')}/${aNum}`,
+        montoNum: totalMes
       });
     }
 
     const maxMonto = Math.max(...resultado.map((r) => r.montoNum), 1);
-    this.tendencia = resultado.map((r) => ({
-      ...r,
-      altura: `${Math.max(12, Math.round((r.montoNum / maxMonto) * 95))}%`
-    }));
+
+    this.tendencia = resultado.map((r, index) => {
+      const pct = (r.montoNum / maxMonto) * 80;
+      let texto = 'Q 0';
+      if (r.montoNum >= 1000) {
+        const k = r.montoNum / 1000;
+        texto = `Q ${k % 1 === 0 ? k : k.toFixed(1)}k`;
+      } else if (r.montoNum > 0) {
+        texto = `Q ${r.montoNum}`;
+      }
+
+      const coloresBarra = ['#75B8A7', '#62AC9A', '#4FA08D', '#3D9480', '#2E8572', '#1B6A58'];
+
+      return {
+        mes: r.mes,
+        valorTexto: texto,
+        fechaTexto: r.fechaTexto,
+        altura: `${Math.max(6, Math.round(pct))}%`,
+        color: coloresBarra[index % coloresBarra.length]
+      };
+    });
   }
 
-  abrirModal(): void {
-    this.nuevoIngreso = { titulo: '', monto: null };
-    this.guardando = false;
-    this.mostrarModal = true;
-    this.cdr.detectChanges();
-  }
+  guardarIngreso(): void {
+    if (!this.nuevoIngreso.titulo || Number(this.nuevoIngreso.monto) <= 0) return;
 
-  cerrarModal(): void {
-    this.mostrarModal = false;
-    this.guardando = false;
-    this.cdr.detectChanges();
-  }
+    const payload = {
+      titulo: this.nuevoIngreso.titulo,
+      monto: Number(this.nuevoIngreso.monto),
+      categoria: this.nuevoIngreso.categoria || 'General'
+    };
 
-  registrarIngreso(): void {
-    if (!this.nuevoIngreso.titulo || !this.nuevoIngreso.monto) return;
-
-    this.guardando = true;
-    this.http.post(this.apiUrl, this.nuevoIngreso, { headers: this.getAuthHeaders() }).subscribe({
+    this.http.post(this.apiUrlIngresos, payload, { headers: this.getAuthHeaders() }).subscribe({
       next: () => {
-        this.cerrarModal();
-        this.cargarDatos();
-      },
-      error: (err) => {
-        this.guardando = false;
-        this.cdr.detectChanges();
-        console.error('Error al guardar:', err);
-        alert('Error al registrar el ingreso.');
+        this.mostrarModalIngreso = false;
+        this.nuevoIngreso = { titulo: '', monto: 0, categoria: '' };
+        this.cargarIngresos();
       }
     });
   }
