@@ -1,7 +1,7 @@
 <div class="dashboard-container">
   <aside class="sidebar">
     <div class="logo-section">
-      <img src="assets/logo.png" alt="Fintrax" class="logo" />
+      <img src="/images/LogoFintrax.png" alt="Fintrax" class="logo" />
       <h3>FINTRAX</h3>
     </div>
 
@@ -27,7 +27,7 @@
   <main class="main-content">
     <header class="top-header">
       <div>
-        <h1>Hola, {{ usuario.nombre }} 👋</h1>
+        <h1>Hola, {{ usuario.nombre }}</h1>
         <p class="subtitle">Historial unificado de transacciones. {{ fechaHoy }}</p>
       </div>
       <div class="header-actions">
@@ -47,7 +47,7 @@
 
         <div class="balance-col center">
           <h2 class="main-balance" [ngClass]="balanceNeto >= 0 ? 'green-balance' : 'red-balance'">
-            Q {{ balanceNeto >= 0 ? '+' : '' }}{{ balanceNeto | number:'1.2-2' }}
+            Q {{ balanceNeto | number:'1.2-2' }}
           </h2>
         </div>
 
@@ -65,9 +65,6 @@
         <table class="movimientos-table">
           <tbody>
             <tr *ngFor="let m of movimientos">
-              <td class="col-icon">
-                <span class="icon-bubble">{{ obtenerIcono(m.categoria, m.tipo) }}</span>
-              </td>
               <td class="col-titulo">
                 <strong>{{ m.titulo }}</strong>
               </td>
@@ -75,12 +72,12 @@
               <td class="col-subcategoria">{{ m.subcategoria }}</td>
               <td class="col-fecha">{{ m.fecha | date:'dd/MM/yyyy' }}</td>
               <td class="col-monto" [ngClass]="m.tipo === 'ingreso' ? 'monto-positivo' : 'monto-negativo'">
-                {{ m.tipo === 'ingreso' ? '+Q ' : '-Q ' }}{{ m.monto | number:'1.2-2' }}
+                Q {{ m.monto | number:'1.2-2' }}
               </td>
             </tr>
 
             <tr *ngIf="movimientos.length === 0">
-              <td colspan="6" class="sin-datos">No hay movimientos registrados en este periodo.</td>
+              <td colspan="5" class="sin-datos">No hay movimientos registrados en este periodo.</td>
             </tr>
           </tbody>
         </table>
