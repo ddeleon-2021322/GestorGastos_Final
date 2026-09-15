@@ -1,8 +1,7 @@
 <div class="layout">
-  <!-- Barra lateral de navegación -->
   <aside class="sidebar">
-    <div class="logo">
-      <div class="logo-marca"></div>
+    <div class="logo-section">
+      <img src="/images/LogoFintrax.png" alt="Fintrax" class="logo" />
       <h2>FINTRAX</h2>
     </div>
 
@@ -25,7 +24,6 @@
     </div>
   </aside>
 
-  <!-- Contenedor central -->
   <main class="main-content">
     <header class="header">
       <div>
@@ -35,7 +33,6 @@
     </header>
 
     <div class="dashboard-grid">
-      <!-- Tarjeta 1: Total Gastos -->
       <section class="card card-resumen">
         <h3>Resumen de Gastos Totales</h3>
         <div class="resumen-body">
@@ -49,7 +46,6 @@
         </div>
       </section>
 
-      <!-- Tarjeta 2: Tendencia Semestral -->
       <section class="card card-tendencia">
         <h3>Tendencia de Gastos (Últimos 6 Meses)</h3>
         <div class="grafica-barras">
@@ -64,7 +60,6 @@
         </div>
       </section>
 
-      <!-- Tarjeta 3: Distribución por Categorías -->
       <section class="card card-categorias">
         <h3>Distribución por Categorías</h3>
         <div class="categorias-grid">
@@ -87,7 +82,6 @@
         </div>
       </section>
 
-      <!-- Tarjeta 4: Transacciones Recientes -->
       <section class="card card-transacciones">
         <h3>Últimas Transacciones de Gasto</h3>
         <div class="lista-gastos">
@@ -106,14 +100,12 @@
       </section>
     </div>
 
-    <!-- Acciones Inferiores -->
     <footer class="footer-actions">
       <button class="btn-accion btn-ingreso" routerLink="/ingresos">+ Nuevo ingreso</button>
       <button class="btn-accion btn-gasto" (click)="mostrarModalGasto = true">+ Nuevo gasto</button>
     </footer>
   </main>
 
-  <!-- Modal Dinámico -->
   <div class="modal-backdrop" *ngIf="mostrarModalGasto">
     <div class="modal-card">
       <h3>Registrar Gasto</h3>
