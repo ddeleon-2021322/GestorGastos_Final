@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -8,6 +8,7 @@ interface CategoriaGasto {
   nombre: string;
   monto: number;
   porcentaje: number;
+  porcentajeDona: number;
   color: string;
 }
 
@@ -33,13 +34,11 @@ interface TransaccionGasto {
   templateUrl: './gastos.component.html',
   styleUrls: ['./gastos.component.css']
 })
-export class GastosComponent implements OnInit, OnDestroy {
-  readonly TIEMPO_INACTIVIDAD = '2m';
-
-  usuario = { nombre: 'Usuario', email: '' };
+export class GastosComponent implements OnInit {
+  usuario = { nombre: 'Usuario', email: 'usuario@email.com' };
   fechaHoy: string = '';
   totalGastos: number = 0;
-  
+
   transacciones: TransaccionGasto[] = [];
   categorias: CategoriaGasto[] = [];
   tendencia: BarraTendencia[] = [];
@@ -49,18 +48,9 @@ export class GastosComponent implements OnInit, OnDestroy {
   nuevoGasto = { titulo: '', monto: 0, categoria: '' };
 
   private isBrowser: boolean;
-  private temporizador: any;
   private apiUrlGastos = 'http://localhost:3000/api/gastos';
 
-  private readonly paletaColores: string[] = [
-    '#C38C28',
-    '#056E4B',
-    '#00193C',
-    '#8C5A2B',
-    '#2D5A43',
-    '#5C4018',
-    '#334E68'
-  ];
+  private readonly coloresGastos: string[] = ['#C38C28', '#00193C', '#056E4B'];
 
   constructor(
     private router: Router,
@@ -83,10 +73,6 @@ export class GastosComponent implements OnInit, OnDestroy {
     }
   }
 
-  ngOnDestroy(): void {
-    if (this.temporizador) clearTimeout(this.temporizador);
-  }
-
   private establecerFechaActual(): void {
     const d = new Date();
     this.fechaHoy = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
@@ -102,9 +88,8 @@ export class GastosComponent implements OnInit, OnDestroy {
       next: (data) => {
         this.totalGastos = Number(data.total) || 0;
         this.transacciones = data.transacciones || [];
-        
-        this.procesarCategoriasDinamicas();
-        this.procesarTendenciaSemestral();
+        this.procesarCategorias();
+        this.procesarTendencia();
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -116,7 +101,26 @@ export class GastosComponent implements OnInit, OnDestroy {
     });
   }
 
-  private procesarCategoriasDinamicas(): void {
+  guardarGasto(): void {
+    if (!this.nuevoGasto.titulo || Number(this.nuevoGasto.monto) <= 0) return;
+
+    const payload = {
+      titulo: this.nuevoGasto.titulo,
+      monto: Number(this.nuevoGasto.monto),
+      categoria: this.nuevoGasto.categoria || 'Otros'
+    };
+
+    this.http.post(this.apiUrlGastos, payload, { headers: this.getAuthHeaders() }).subscribe({
+      next: () => {
+        this.mostrarModalGasto = false;
+        this.nuevoGasto = { titulo: '', monto: 0, categoria: '' };
+        this.cargarGastos();
+      },
+      error: (err) => console.error('Error al guardar gasto:', err)
+    });
+  }
+
+  private procesarCategorias(): void {
     if (this.totalGastos === 0 || this.transacciones.length === 0) {
       this.categorias = [];
       this.fondoDonut = 'conic-gradient(#e5e7eb 0% 100%)';
@@ -125,44 +129,45 @@ export class GastosComponent implements OnInit, OnDestroy {
 
     const mapa: { [key: string]: number } = {};
     for (const t of this.transacciones) {
-      const cat = (t.categoria && t.categoria.trim() !== '') ? t.categoria.trim() : 'General';
+      const cat = (t.categoria && t.categoria.trim() !== '') ? t.categoria.trim() : (t.titulo || 'Otros');
       mapa[cat] = (mapa[cat] || 0) + Number(t.monto);
     }
 
-    const llavesOrdenadas = Object.keys(mapa).sort((a, b) => mapa[b] - mapa[a]);
+    const top3Nombres = Object.keys(mapa)
+      .sort((a, b) => mapa[b] - mapa[a])
+      .slice(0, 3);
 
-    this.categorias = llavesOrdenadas.map((nombre, index) => {
+    const totalTop3 = top3Nombres.reduce((sum, nom) => sum + mapa[nom], 0);
+
+    this.categorias = top3Nombres.map((nombre, index) => {
       const monto = mapa[nombre];
-      const porcentaje = Math.round((monto / this.totalGastos) * 100);
       return {
         nombre,
         monto,
-        porcentaje,
-        color: this.paletaColores[index % this.paletaColores.length]
+        porcentaje: Math.round((monto / this.totalGastos) * 100),
+        porcentajeDona: Math.round((monto / totalTop3) * 100),
+        color: this.coloresGastos[index]
       };
     });
 
     let acumulado = 0;
     const gradientes: string[] = [];
-    for (const c of this.categorias) {
-      const inicio = acumulado;
-      acumulado += c.porcentaje;
-      gradientes.push(`${c.color} ${inicio}% ${acumulado}%`);
-    }
 
-    if (acumulado < 100 && gradientes.length > 0) {
-      gradientes.push(`#e5e7eb ${acumulado}% 100%`);
-    }
+    this.categorias.forEach((c, index) => {
+      const inicio = acumulado;
+      const fin = (index === this.categorias.length - 1) ? 100 : acumulado + c.porcentajeDona;
+      acumulado = fin;
+      gradientes.push(`${c.color} ${inicio}% ${fin}%`);
+    });
 
     this.fondoDonut = `conic-gradient(${gradientes.join(', ')})`;
   }
 
-  private procesarTendenciaSemestral(): void {
+  private procesarTendencia(): void {
     const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     const ahora = new Date();
     const resultado: { mes: string; fechaTexto: string; montoNum: number }[] = [];
 
-    // Cálculo dinámico de los últimos 6 meses hacia atrás
     for (let i = 5; i >= 0; i--) {
       const ref = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
       const mIdx = ref.getMonth();
@@ -185,25 +190,21 @@ export class GastosComponent implements OnInit, OnDestroy {
     const maxMonto = Math.max(...resultado.map((r) => r.montoNum), 1);
 
     this.tendencia = resultado.map((r) => {
-      const pct = (r.montoNum / maxMonto) * 85;
+      const pct = (r.montoNum / maxMonto) * 80;
+      let texto = 'Q 0';
+      if (r.montoNum >= 1000) {
+        const k = r.montoNum / 1000;
+        texto = `Q ${k % 1 === 0 ? k : k.toFixed(1)}k`;
+      } else if (r.montoNum > 0) {
+        texto = `Q ${r.montoNum}`;
+      }
+
       return {
         mes: r.mes,
-        valorTexto: `Q ${r.montoNum.toLocaleString('es-GT', { minimumFractionDigits: 0 })}`,
+        valorTexto: texto,
         fechaTexto: r.fechaTexto,
-        altura: `${Math.max(12, Math.round(pct))}%`
+        altura: `${Math.max(6, Math.round(pct))}%`
       };
-    });
-  }
-
-  guardarGasto(): void {
-    if (!this.nuevoGasto.titulo || this.nuevoGasto.monto <= 0) return;
-
-    this.http.post(this.apiUrlGastos, this.nuevoGasto, { headers: this.getAuthHeaders() }).subscribe({
-      next: () => {
-        this.mostrarModalGasto = false;
-        this.nuevoGasto = { titulo: '', monto: 0, categoria: '' };
-        this.cargarGastos();
-      }
     });
   }
 

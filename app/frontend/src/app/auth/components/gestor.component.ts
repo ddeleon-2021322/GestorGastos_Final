@@ -1,7 +1,15 @@
-import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID, HostListener, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { forkJoin } from 'rxjs';
+
+interface Movimiento {
+  tipo: 'ingreso' | 'gasto';
+  titulo: string;
+  monto: number;
+  fecha: string;
+}
 
 @Component({
   selector: 'app-gestor',
@@ -10,21 +18,22 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
   templateUrl: './gestor.component.html',
   styleUrls: ['./gestor.component.css']
 })
-export class GestorComponent implements OnInit, OnDestroy {
-  readonly TIEMPO_INACTIVIDAD = '2m';
-
+export class GestorComponent implements OnInit {
   usuario = { nombre: 'Usuario', email: 'usuario@email.com' };
-  
-  resumen = { ingresos: 0, gastos: 0, balance: 0 };
-  movimientos: any[] = [];
-  
-  porcentajeIngresos: number = 0;
-  porcentajeGastos: number = 0;
-  fondoDonut: string = 'conic-gradient(#e5e7eb 0% 100%)';
 
-  private temporizador: any;
+  totalIngresos: number = 0;
+  totalGastos: number = 0;
+  balance: number = 0;
+
+  porcentajeIngresos: number = 100;
+  porcentajeGastos: number = 0;
+  fondoDonut: string = 'conic-gradient(#056E4B 0% 100%)';
+
+  movimientosRecientes: Movimiento[] = [];
+
   private isBrowser: boolean;
   private apiUrlIngresos = 'http://localhost:3000/api/ingresos';
+  private apiUrlGastos = 'http://localhost:3000/api/gastos';
 
   constructor(
     private router: Router,
@@ -42,13 +51,8 @@ export class GestorComponent implements OnInit, OnDestroy {
         this.router.navigate(['/login']);
         return;
       }
-      this.reiniciarTemporizador();
-      this.cargarDatos();
+      this.cargarDatosDashboard();
     }
-  }
-
-  ngOnDestroy(): void {
-    if (this.temporizador) clearTimeout(this.temporizador);
   }
 
   private getAuthHeaders(): HttpHeaders {
@@ -56,72 +60,56 @@ export class GestorComponent implements OnInit, OnDestroy {
     return new HttpHeaders().set('Authorization', `Bearer ${token}`);
   }
 
-  cargarDatos(): void {
-    this.http.get<any>(this.apiUrlIngresos, { headers: this.getAuthHeaders() }).subscribe({
-      next: (data) => {
-        this.resumen.ingresos = Number(data.total) || 0;
-        this.resumen.balance = this.resumen.ingresos - this.resumen.gastos;
+  cargarDatosDashboard(): void {
+    const headers = this.getAuthHeaders();
 
-        this.movimientos = (data.transacciones || []).slice(0, 5).map((t: any) => ({
+    forkJoin({
+      ingresos: this.http.get<any>(this.apiUrlIngresos, { headers }),
+      gastos: this.http.get<any>(this.apiUrlGastos, { headers })
+    }).subscribe({
+      next: ({ ingresos, gastos }) => {
+        this.totalIngresos = Number(ingresos.total) || 0;
+        this.totalGastos = Number(gastos.total) || 0;
+        this.balance = this.totalIngresos - this.totalGastos;
+
+        const totalMovido = this.totalIngresos + this.totalGastos;
+        if (totalMovido > 0) {
+          this.porcentajeIngresos = Math.round((this.totalIngresos / totalMovido) * 100);
+          this.porcentajeGastos = 100 - this.porcentajeIngresos;
+          this.fondoDonut = `conic-gradient(#056E4B 0% ${this.porcentajeIngresos}%, #D7B46F ${this.porcentajeIngresos}% 100%)`;
+        } else {
+          this.porcentajeIngresos = 0;
+          this.porcentajeGastos = 0;
+          this.fondoDonut = 'conic-gradient(#e2e8f0 0% 100%)';
+        }
+
+        const listaIngresos: Movimiento[] = (ingresos.transacciones || []).map((t: any) => ({
+          tipo: 'ingreso',
           titulo: t.titulo,
           monto: Number(t.monto),
-          tipo: 'ingreso',
           fecha: t.fecha
         }));
 
-        this.actualizarGrafica();
+        const listaGastos: Movimiento[] = (gastos.transacciones || []).map((t: any) => ({
+          tipo: 'gasto',
+          titulo: t.titulo,
+          monto: Number(t.monto),
+          fecha: t.fecha
+        }));
+
+        this.movimientosRecientes = [...listaIngresos, ...listaGastos]
+          .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+          .slice(0, 5);
+
         this.cdr.detectChanges();
       },
       error: (err) => {
         if (err.status === 401 || err.status === 403) {
-          this.expulsarPorInactividad();
+          localStorage.removeItem('miToken');
+          this.router.navigate(['/login']);
         }
       }
     });
-  }
-
-  private actualizarGrafica(): void {
-    const totalMovimientos = this.resumen.ingresos + this.resumen.gastos;
-
-    if (totalMovimientos === 0) {
-      this.fondoDonut = 'conic-gradient(#e5e7eb 0% 100%)';
-      this.porcentajeIngresos = 0;
-      this.porcentajeGastos = 0;
-      return;
-    }
-
-    this.porcentajeIngresos = Math.round((this.resumen.ingresos / totalMovimientos) * 100);
-    this.porcentajeGastos = Math.round((this.resumen.gastos / totalMovimientos) * 100);
-    this.fondoDonut = `conic-gradient(#106b4e 0% ${this.porcentajeIngresos}%, #c5a365 ${this.porcentajeIngresos}% 100%)`;
-  }
-
-  @HostListener('window:mousemove')
-  @HostListener('window:keydown')
-  @HostListener('window:click')
-  @HostListener('window:scroll')
-  reiniciarTemporizador(): void {
-    if (!this.isBrowser) return;
-    if (this.temporizador) clearTimeout(this.temporizador);
-
-    const ms = this.convertirAMilisegundos(this.TIEMPO_INACTIVIDAD);
-    this.temporizador = setTimeout(() => this.expulsarPorInactividad(), ms);
-  }
-
-  private convertirAMilisegundos(tiempo: string): number {
-    const unidad = tiempo.slice(-1);
-    const valor = parseInt(tiempo.slice(0, -1), 10);
-    if (unidad === 's') return valor * 1000;
-    if (unidad === 'm') return valor * 60 * 1000;
-    if (unidad === 'h') return valor * 60 * 60 * 1000;
-    return valor * 1000;
-  }
-
-  private expulsarPorInactividad(): void {
-    if (this.isBrowser) {
-      localStorage.removeItem('miToken');
-      alert('Su sesión ha expirado por inactividad.');
-      this.router.navigate(['/login']);
-    }
   }
 
   cerrarSesion(): void {
