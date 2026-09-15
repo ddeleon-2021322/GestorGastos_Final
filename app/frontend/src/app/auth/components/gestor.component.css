@@ -15,22 +15,31 @@
 }
 
 .logo-section {
-  text-align: center;
-  margin-bottom: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 35px;
+  background-color: transparent; 
 }
 
 .logo-section .logo {
-  width: 65px;
-  height: 65px;
+  width: 100px;
+  height: 100px;
+  background-color: #FFFFFF; 
   border-radius: 50%;
-  margin-bottom: 10px;
-  object-fit: cover;
+  padding: 8px;             
+  object-fit: contain;
+  margin-bottom: 0;        
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .logo-section h3 {
   margin: 0;
-  font-size: 20px;
-  font-weight: bold;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: #FFFFFF;
 }
 
 .menu {
@@ -99,7 +108,6 @@
   color: #00193C;
 }
 
-/* Contenido Principal */
 .main-content {
   flex: 1;
   padding: 40px;
@@ -144,7 +152,6 @@
   font-size: 18px;
 }
 
-/* Tarjetas */
 .summary-cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -181,7 +188,6 @@
 .text-green { color: #056E4B !important; }
 .text-yellow { color: #D7B46F !important; }
 
-/* Paneles Centrales */
 .middle-section {
   display: grid;
   grid-template-columns: 1fr 1.5fr;
@@ -202,7 +208,6 @@
   font-weight: 700;
 }
 
-/* Dona dinámica */
 .donut-chart {
   width: 220px;
   height: 220px;
@@ -257,7 +262,6 @@
 .green-dot { background: #056E4B; }
 .yellow-dot { background: #D7B46F; }
 
-/* Lista de movimientos */
 .list-header {
   display: flex;
   justify-content: space-between;
@@ -310,7 +314,6 @@
   background-color: #f1f5f9;
 }
 
-/* Botones de Acción */
 .action-buttons {
   display: flex;
   gap: 15px;

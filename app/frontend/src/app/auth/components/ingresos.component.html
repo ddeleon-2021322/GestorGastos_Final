@@ -1,30 +1,20 @@
 <div class="dashboard-container">
-  
-  <!-- Barra lateral -->
   <aside class="sidebar">
     <div class="logo-section">
-      <img src="/images/LogoFintrax.png" alt="FINTRAX" class="logo">
+      <img src="/images/LogoFintrax.png" alt="Fintrax" class="logo" />
       <h3>FINTRAX</h3>
     </div>
 
     <nav class="menu">
-      <a routerLink="/gestor">
-        <span class="icon">🏠</span> Inicio
-      </a>
-      <a routerLink="/ingresos" class="active">
-        <span class="icon">📊</span> Ingresos
-      </a>
-      <a href="#">
-        <span class="icon">💸</span> Gastos
-      </a>
-      <a href="#">
-        <span class="icon">📈</span> Movimientos
-      </a>
+      <a routerLink="/gestor">Inicio</a>
+      <a routerLink="/ingresos" class="active">Ingresos</a>
+      <a routerLink="/gastos">Gastos</a>
+      <a routerLink="/movimientos">Movimientos</a>
     </nav>
 
     <div class="user-profile">
       <div class="user-info">
-        <div class="avatar">{{ usuario.nombre.charAt(0) }}</div>
+        <span class="avatar">U</span>
         <div>
           <p class="user-name">{{ usuario.nombre }}</p>
           <p class="user-email">{{ usuario.email }}</p>
@@ -34,10 +24,7 @@
     </div>
   </aside>
 
-  <!-- Contenido principal -->
   <main class="main-content">
-    
-    <!-- Encabezado -->
     <header class="top-header">
       <div>
         <h1>Hola, {{ usuario.nombre }} 👋</h1>
@@ -45,141 +32,105 @@
       </div>
       <div class="header-actions">
         <button class="btn-icon">🔔</button>
-        <button class="btn-icon avatar-btn">👤</button>
+        <button class="btn-icon">👤</button>
       </div>
     </header>
 
-    <!-- Grid 2x2 de paneles -->
-    <div class="cards-grid">
-      
-      <!-- 1. Resumen de Ingresos Totales -->
-      <div class="card card-total">
+    <div class="summary-grid">
+      <section class="card card-resumen">
         <h3 class="card-title">Resumen de Ingresos Totales</h3>
-        <div class="total-content">
-          <div class="circle-icon">
+        <div class="resumen-content">
+          <div class="icono-flecha">
             <span>↑</span>
           </div>
-          <div class="total-text">
-            <span class="label">Total Ingresos</span>
-            <h2 class="amount">Q {{ totalIngresos | number:'1.2-2' }}</h2>
+          <div class="monto-info">
+            <span class="label-muted">Total Ingresos</span>
+            <h2 class="monto-verde">Q {{ totalIngresos | number:'1.2-2' }}</h2>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- 2. Tendencia de Ingresos (Últimos 6 Meses) -->
-      <div class="card card-trend">
+      <section class="card card-tendencia">
         <h3 class="card-title">Tendencia de Ingresos (Últimos 6 Meses)</h3>
-        <div class="chart-bars">
-          <div class="bar-col" *ngFor="let item of tendencia">
-            <span class="bar-val">{{ item.valor }}</span>
-            <div class="bar-track">
-              <div class="bar-fill" [style.height]="item.altura"></div>
+        <div class="grafica-barras">
+          <div class="columna-barra" *ngFor="let b of tendencia">
+            <span class="valor-barra">{{ b.valorTexto }}</span>
+            <div class="barra-track">
+              <div class="barra-relleno" [style.height]="b.altura" [style.background-color]="b.color"></div>
             </div>
-            <span class="bar-month">{{ item.mes }}</span>
-            <span class="bar-date">{{ item.fecha }}</span>
+            <span class="mes-barra">{{ b.mes }}</span>
+            <small class="fecha-barra">{{ b.fechaTexto }}</small>
           </div>
         </div>
-      </div>
+      </section>
+    </div>
 
-      <!-- 3. Fuentes Principales de Ingresos -->
-      <div class="card card-sources">
+    <div class="details-grid">
+      <section class="card card-fuentes">
         <h3 class="card-title">Fuentes Principales de Ingresos</h3>
-        <div class="sources-content">
-          
-          <!-- Gráfica de pastel con colores dinámicos calculados en TS -->
-          <div class="donut-chart" [style.background]="fondoDonut">
-            <div class="donut-hole"></div>
+        <div class="fuentes-layout">
+          <div class="donut-box">
+            <div class="donut-chart" [style.background]="fondoDonut">
+              <div class="donut-hole"></div>
+            </div>
           </div>
 
-          <div class="sources-list">
-            <div *ngIf="fuentes.length === 0" class="empty-state">
-              Sin fuentes registradas
-            </div>
-
-            <div class="source-item" *ngFor="let f of fuentes">
-              <div class="source-info">
-                <span class="source-name">{{ f.nombre }}</span>
-                
-                <div class="source-bar-track">
-                  <!-- Barra con ancho y color sincronizados a su sección del pastel -->
-                  <div 
-                    class="source-bar-fill" 
-                    [style.width]="f.porcentaje + '%'" 
-                    [style.background-color]="f.color">
-                  </div>
-                </div>
-
-                <span class="source-monto">Q {{ f.monto | number:'1.2-2' }}</span>
+          <div class="fuentes-lista">
+            <div class="fuente-row" *ngFor="let c of categorias">
+              <span class="fuente-nombre">{{ c.nombre }}</span>
+              <div class="fuente-track">
+                <div class="fuente-barra" [style.width]="c.porcentaje + '%'" [style.background-color]="c.color"></div>
               </div>
+              <strong class="fuente-monto">Q {{ c.monto | number:'1.2-2' }}</strong>
             </div>
+            <p class="sin-datos" *ngIf="categorias.length === 0">No hay categorías registradas.</p>
           </div>
-
         </div>
-      </div>
+      </section>
 
-      <!-- 4. Últimas Transacciones de Ingreso -->
-      <div class="card card-transactions">
+      <section class="card card-transacciones">
         <h3 class="card-title">Últimas Transacciones de Ingreso</h3>
-        <div class="transactions-list">
-          <div *ngIf="transacciones.length === 0" class="empty-state">
-            No tienes transacciones de ingreso registradas.
-          </div>
-
-          <div class="trans-item" *ngFor="let t of transacciones">
-            <div class="trans-icon">↑</div>
-            <div class="trans-details">
-              <span class="trans-monto">Q {{ t.monto | number:'1.2-2' }}</span>
-              <span class="trans-desc">- {{ t.titulo }}</span>
-              <span class="trans-date">[{{ t.fecha | date:'dd/MM/yyyy' }}]</span>
+        <div class="transacciones-list">
+          <div class="transaccion-item" *ngFor="let t of transacciones | slice:0:5">
+            <div class="badge-flecha">
+              <span>↑</span>
+            </div>
+            <div class="transaccion-texto">
+              <strong class="t-monto">Q {{ t.monto | number:'1.2-2' }}</strong>
+              <span class="t-sep">-</span>
+              <span class="t-titulo">{{ t.titulo }}</span>
+              <span class="t-sep">-</span>
+              <span class="t-fecha">[{{ t.fecha | date:'dd/MM/yyyy' }}]</span>
             </div>
           </div>
+          <p class="sin-datos" *ngIf="transacciones.length === 0">No hay transacciones registradas.</p>
         </div>
-      </div>
-
+      </section>
     </div>
 
-    <!-- Botones de Acción Inferiores -->
-    <div class="bottom-actions">
-      <button class="btn-green" (click)="abrirModal()">+ Nuevo ingreso</button>
-      <button class="btn-gold">+ Nuevo gasto</button>
-    </div>
-
+    <footer class="action-buttons">
+      <button class="btn-green" (click)="mostrarModalIngreso = true">+ Nuevo ingreso</button>
+      <button class="btn-yellow" routerLink="/gastos">+ Nuevo gasto</button>
+    </footer>
   </main>
-</div>
 
-<!-- Modal para registrar nuevo ingreso -->
-<div class="modal-backdrop" *ngIf="mostrarModal" (click)="cerrarModal()">
-  <div class="modal-box" (click)="$event.stopPropagation()">
-    <h3>Registrar Nuevo Ingreso</h3>
-    <form (ngSubmit)="registrarIngreso()">
-      <div class="modal-field">
-        <label>Concepto / Título</label>
-        <input 
-          type="text" 
-          [(ngModel)]="nuevoIngreso.titulo" 
-          name="titulo" 
-          placeholder="Ej. Salario, Freelance, Bono" 
-          required>
-      </div>
+  <div class="modal-backdrop" *ngIf="mostrarModalIngreso">
+    <div class="modal-card">
+      <h3>Registrar Ingreso</h3>
+      
+      <label>Concepto</label>
+      <input type="text" [(ngModel)]="nuevoIngreso.titulo" placeholder="Ej. Salario, Freelance">
 
-      <div class="modal-field">
-        <label>Monto (Q)</label>
-        <input 
-          type="number" 
-          [(ngModel)]="nuevoIngreso.monto" 
-          name="monto" 
-          placeholder="0.00" 
-          step="0.01" 
-          min="0.01" 
-          required>
-      </div>
+      <label>Monto (Q)</label>
+      <input type="number" [(ngModel)]="nuevoIngreso.monto" placeholder="0.00">
+
+      <label>Categoría</label>
+      <input type="text" [(ngModel)]="nuevoIngreso.categoria" placeholder="Ej. Salario Principal">
 
       <div class="modal-actions">
-        <button type="button" class="btn-cancelar" (click)="cerrarModal()">Cancelar</button>
-        <button type="submit" class="btn-guardar" [disabled]="guardando">
-          {{ guardando ? 'Guardando...' : 'Guardar' }}
-        </button>
+        <button class="btn-cancel" (click)="mostrarModalIngreso = false">Cancelar</button>
+        <button class="btn-save" (click)="guardarIngreso()">Guardar</button>
       </div>
-    </form>
+    </div>
   </div>
 </div>

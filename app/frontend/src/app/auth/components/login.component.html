@@ -1,6 +1,5 @@
 <div class="split-login-container">
 
-  <!-- PANEL IZQUIERDO -->
   <div class="left-panel">
     <div class="branding">
       <img src="/images/LogoFintrax.png" alt="Logo de la app" class="logo">
@@ -14,7 +13,6 @@
     </div>
   </div>
 
-  <!-- PANEL DERECHO -->
   <div class="right-panel">
     <div class="form-wrapper">
       
@@ -22,7 +20,6 @@
       <h2>Iniciar Sesión</h2>
       <p class="form-subtitle">Por favor, ingrese sus credenciales para continuar.</p>
       
-      <!-- FORMULARIO PROTEGIDO POR ANGULAR -->
       <form #loginForm="ngForm" (ngSubmit)="loginForm.form.valid && onLogin()">
         
         <div class="form-group">
@@ -47,18 +44,15 @@
             required>
         </div>
 
-        <!-- MENSAJE DE ERROR -->
         <p class="error" *ngIf="errorMessage" style="color: #ef4444; font-size: 14px; margin-bottom: 15px;">
           {{ errorMessage }}
         </p>
 
-        <!-- BOTÓN DE INGRESO -->
         <button type="submit" class="btn-submit" [disabled]="!loginForm.valid">
           Iniciar Sesión <span>&rarr;</span>
         </button>
       </form>
 
-      <!-- SECCIÓN DE REGISTRO -->
       <div class="register-section">
         <p>¿No tienes cuenta? <a routerLink="/register">Regístrate aquí</a></p>
         <p class="secure-text">🔒 Tus datos están protegidos</p>
