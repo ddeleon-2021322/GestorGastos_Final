@@ -17,6 +17,15 @@ export const inicializarBaseDatos = async () => {
         monto DECIMAL(10,2) NOT NULL,
         fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+
+      CREATE TABLE IF NOT EXISTS gastos(
+        id SERIAL PRIMARY KEY,
+        usuario_id INT REFERENCES usuarios(id) on DELETE CASCADE,
+        categoria VARCHAR(100) NOT NULL DEFAULT 'Otros',
+        titulo VARCHAR(100) NOT NULL,
+        monto DECIMAL(10,2)NOT NULL,
+        fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
     `;
 
     await database.query(queryTablas);

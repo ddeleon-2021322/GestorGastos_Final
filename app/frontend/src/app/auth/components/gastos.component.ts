@@ -1,10 +1,10 @@
-import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 
-interface CategoriaIngreso {
+interface CategoriaGasto {
   nombre: string;
   monto: number;
   porcentaje: number;
@@ -17,10 +17,9 @@ interface BarraTendencia {
   valorTexto: string;
   fechaTexto: string;
   altura: string;
-  color: string;
 }
 
-interface TransaccionIngreso {
+interface TransaccionGasto {
   id?: number;
   categoria: string;
   titulo: string;
@@ -29,36 +28,29 @@ interface TransaccionIngreso {
 }
 
 @Component({
-  selector: 'app-ingresos',
+  selector: 'app-gastos',
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
-  templateUrl: './ingresos.component.html',
-  styleUrls: ['./ingresos.component.css']
+  templateUrl: './gastos.component.html',
+  styleUrls: ['./gastos.component.css']
 })
-export class IngresosComponent implements OnInit, OnDestroy {
-  readonly TIEMPO_INACTIVIDAD = '2m';
-
+export class GastosComponent implements OnInit {
   usuario = { nombre: 'Usuario', email: 'usuario@email.com' };
   fechaHoy: string = '';
-  totalIngresos: number = 0;
+  totalGastos: number = 0;
 
-  transacciones: TransaccionIngreso[] = [];
-  categorias: CategoriaIngreso[] = [];
+  transacciones: TransaccionGasto[] = [];
+  categorias: CategoriaGasto[] = [];
   tendencia: BarraTendencia[] = [];
   fondoDonut: string = 'conic-gradient(#e5e7eb 0% 100%)';
 
-  mostrarModalIngreso: boolean = false;
-  nuevoIngreso = { titulo: '', monto: 0, categoria: '' };
+  mostrarModalGasto: boolean = false;
+  nuevoGasto = { titulo: '', monto: 0, categoria: '' };
 
   private isBrowser: boolean;
-  private temporizador: any;
-  private apiUrlIngresos = 'http://localhost:3000/api/ingresos';
+  private apiUrlGastos = 'http://localhost:3000/api/gastos';
 
-  private readonly coloresLogo: string[] = [
-    '#056E4B',
-    '#00193C',
-    '#C38C28'
-  ];
+  private readonly coloresGastos: string[] = ['#C38C28', '#00193C', '#056E4B'];
 
   constructor(
     private router: Router,
@@ -77,12 +69,8 @@ export class IngresosComponent implements OnInit, OnDestroy {
         return;
       }
       this.establecerFechaActual();
-      this.cargarIngresos();
+      this.cargarGastos();
     }
-  }
-
-  ngOnDestroy(): void {
-    if (this.temporizador) clearTimeout(this.temporizador);
   }
 
   private establecerFechaActual(): void {
@@ -95,14 +83,13 @@ export class IngresosComponent implements OnInit, OnDestroy {
     return new HttpHeaders().set('Authorization', `Bearer ${token}`);
   }
 
-  cargarIngresos(): void {
-    this.http.get<any>(this.apiUrlIngresos, { headers: this.getAuthHeaders() }).subscribe({
+  cargarGastos(): void {
+    this.http.get<any>(this.apiUrlGastos, { headers: this.getAuthHeaders() }).subscribe({
       next: (data) => {
-        this.totalIngresos = Number(data.total) || 0;
+        this.totalGastos = Number(data.total) || 0;
         this.transacciones = data.transacciones || [];
-
-        this.procesarCategoriasDinamicas();
-        this.procesarTendenciaSemestral();
+        this.procesarCategorias();
+        this.procesarTendencia();
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -114,8 +101,27 @@ export class IngresosComponent implements OnInit, OnDestroy {
     });
   }
 
-  private procesarCategoriasDinamicas(): void {
-    if (this.totalIngresos === 0 || this.transacciones.length === 0) {
+  guardarGasto(): void {
+    if (!this.nuevoGasto.titulo || Number(this.nuevoGasto.monto) <= 0) return;
+
+    const payload = {
+      titulo: this.nuevoGasto.titulo,
+      monto: Number(this.nuevoGasto.monto),
+      categoria: this.nuevoGasto.categoria || 'Otros'
+    };
+
+    this.http.post(this.apiUrlGastos, payload, { headers: this.getAuthHeaders() }).subscribe({
+      next: () => {
+        this.mostrarModalGasto = false;
+        this.nuevoGasto = { titulo: '', monto: 0, categoria: '' };
+        this.cargarGastos();
+      },
+      error: (err) => console.error('Error al guardar gasto:', err)
+    });
+  }
+
+  private procesarCategorias(): void {
+    if (this.totalGastos === 0 || this.transacciones.length === 0) {
       this.categorias = [];
       this.fondoDonut = 'conic-gradient(#e5e7eb 0% 100%)';
       return;
@@ -123,10 +129,7 @@ export class IngresosComponent implements OnInit, OnDestroy {
 
     const mapa: { [key: string]: number } = {};
     for (const t of this.transacciones) {
-      const cat = (t.categoria && t.categoria.trim() !== '') 
-        ? t.categoria.trim() 
-        : (t.titulo && t.titulo.trim() !== '' ? t.titulo.trim() : 'General');
-
+      const cat = (t.categoria && t.categoria.trim() !== '') ? t.categoria.trim() : (t.titulo || 'Otros');
       mapa[cat] = (mapa[cat] || 0) + Number(t.monto);
     }
 
@@ -141,9 +144,9 @@ export class IngresosComponent implements OnInit, OnDestroy {
       return {
         nombre,
         monto,
-        porcentaje: Math.round((monto / this.totalIngresos) * 100),
+        porcentaje: Math.round((monto / this.totalGastos) * 100),
         porcentajeDona: Math.round((monto / totalTop3) * 100),
-        color: this.coloresLogo[index]
+        color: this.coloresGastos[index]
       };
     });
 
@@ -160,7 +163,7 @@ export class IngresosComponent implements OnInit, OnDestroy {
     this.fondoDonut = `conic-gradient(${gradientes.join(', ')})`;
   }
 
-  private procesarTendenciaSemestral(): void {
+  private procesarTendencia(): void {
     const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     const ahora = new Date();
     const resultado: { mes: string; fechaTexto: string; montoNum: number }[] = [];
@@ -186,7 +189,7 @@ export class IngresosComponent implements OnInit, OnDestroy {
 
     const maxMonto = Math.max(...resultado.map((r) => r.montoNum), 1);
 
-    this.tendencia = resultado.map((r, index) => {
+    this.tendencia = resultado.map((r) => {
       const pct = (r.montoNum / maxMonto) * 80;
       let texto = 'Q 0';
       if (r.montoNum >= 1000) {
@@ -196,33 +199,12 @@ export class IngresosComponent implements OnInit, OnDestroy {
         texto = `Q ${r.montoNum}`;
       }
 
-      const coloresBarra = ['#75B8A7', '#62AC9A', '#4FA08D', '#3D9480', '#2E8572', '#1B6A58'];
-
       return {
         mes: r.mes,
         valorTexto: texto,
         fechaTexto: r.fechaTexto,
-        altura: `${Math.max(6, Math.round(pct))}%`,
-        color: coloresBarra[index % coloresBarra.length]
+        altura: `${Math.max(6, Math.round(pct))}%`
       };
-    });
-  }
-
-  guardarIngreso(): void {
-    if (!this.nuevoIngreso.titulo || Number(this.nuevoIngreso.monto) <= 0) return;
-
-    const payload = {
-      titulo: this.nuevoIngreso.titulo,
-      monto: Number(this.nuevoIngreso.monto),
-      categoria: this.nuevoIngreso.categoria || 'General'
-    };
-
-    this.http.post(this.apiUrlIngresos, payload, { headers: this.getAuthHeaders() }).subscribe({
-      next: () => {
-        this.mostrarModalIngreso = false;
-        this.nuevoIngreso = { titulo: '', monto: 0, categoria: '' };
-        this.cargarIngresos();
-      }
     });
   }
 

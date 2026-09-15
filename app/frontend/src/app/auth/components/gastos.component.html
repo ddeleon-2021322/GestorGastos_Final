@@ -1,0 +1,136 @@
+<div class="layout">
+  <!-- Barra lateral de navegación -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-marca"></div>
+      <h2>FINTRAX</h2>
+    </div>
+
+    <nav class="menu">
+      <a routerLink="/gestor" class="nav-item">Inicio</a>
+      <a routerLink="/ingresos" class="nav-item">Ingresos</a>
+      <a routerLink="/gastos" class="nav-item active">Gastos</a>
+      <a routerLink="/movimientos" class="nav-item">Movimientos</a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <span class="avatar">U</span>
+        <div class="user-info">
+          <strong>{{ usuario.nombre }}</strong>
+          <small>{{ usuario.email }}</small>
+        </div>
+      </div>
+      <button class="btn-logout" (click)="cerrarSesion()">Salir</button>
+    </div>
+  </aside>
+
+  <!-- Contenedor central -->
+  <main class="main-content">
+    <header class="header">
+      <div>
+        <h1>Hola, {{ usuario.nombre }}</h1>
+        <p class="subtitulo">Detalle general de egresos. {{ fechaHoy }}</p>
+      </div>
+    </header>
+
+    <div class="dashboard-grid">
+      <!-- Tarjeta 1: Total Gastos -->
+      <section class="card card-resumen">
+        <h3>Resumen de Gastos Totales</h3>
+        <div class="resumen-body">
+          <div class="indicador-gasto">
+            <span class="signo-negativo">-</span>
+          </div>
+          <div class="cifras">
+            <span class="label">Total Gastos</span>
+            <h2 class="monto-destacado">Q {{ totalGastos | number:'1.2-2' }}</h2>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tarjeta 2: Tendencia Semestral -->
+      <section class="card card-tendencia">
+        <h3>Tendencia de Gastos (Últimos 6 Meses)</h3>
+        <div class="grafica-barras">
+          <div class="columna-barra" *ngFor="let b of tendencia">
+            <span class="valor-barra">{{ b.valorTexto }}</span>
+            <div class="barra-track">
+              <div class="barra-relleno" [style.height]="b.altura"></div>
+            </div>
+            <span class="mes-barra">{{ b.mes }}</span>
+            <small class="fecha-barra">{{ b.fechaTexto }}</small>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tarjeta 3: Distribución por Categorías -->
+      <section class="card card-categorias">
+        <h3>Distribución por Categorías</h3>
+        <div class="categorias-grid">
+          <div class="donut-wrapper">
+            <div class="donut-chart" [style.background]="fondoDonut">
+              <div class="donut-hole"></div>
+            </div>
+          </div>
+
+          <div class="categorias-lista">
+            <div class="cat-item" *ngFor="let c of categorias">
+              <span class="cat-dot" [style.background]="c.color"></span>
+              <span class="cat-nombre">{{ c.nombre }}</span>
+              <div class="cat-progress-track">
+                <div class="cat-progress-bar" [style.width]="c.porcentaje + '%'" [style.background]="c.color"></div>
+              </div>
+              <strong class="cat-monto">Q {{ c.monto | number:'1.2-2' }}</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tarjeta 4: Transacciones Recientes -->
+      <section class="card card-transacciones">
+        <h3>Últimas Transacciones de Gasto</h3>
+        <div class="lista-gastos">
+          <div class="gasto-row" *ngFor="let t of transacciones | slice:0:5">
+            <span class="bullet-indicador"></span>
+            <div class="gasto-detalle">
+              <strong class="gasto-valor">-Q {{ t.monto | number:'1.2-2' }}</strong>
+              <span class="gasto-sep">/</span>
+              <span class="gasto-titulo">{{ t.titulo }}</span>
+              <span class="gasto-sep">/</span>
+              <span class="gasto-categoria">{{ t.categoria }}</span>
+              <small class="gasto-fecha">{{ t.fecha | date:'dd/MM/yyyy' }}</small>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Acciones Inferiores -->
+    <footer class="footer-actions">
+      <button class="btn-accion btn-ingreso" routerLink="/ingresos">+ Nuevo ingreso</button>
+      <button class="btn-accion btn-gasto" (click)="mostrarModalGasto = true">+ Nuevo gasto</button>
+    </footer>
+  </main>
+
+  <!-- Modal Dinámico -->
+  <div class="modal-backdrop" *ngIf="mostrarModalGasto">
+    <div class="modal-card">
+      <h3>Registrar Gasto</h3>
+      
+      <label>Concepto</label>
+      <input type="text" [(ngModel)]="nuevoGasto.titulo" placeholder="Ej. Combustible, Renta">
+
+      <label>Monto (Q)</label>
+      <input type="number" [(ngModel)]="nuevoGasto.monto" placeholder="0.00">
+
+      <label>Categoría</label>
+      <input type="text" [(ngModel)]="nuevoGasto.categoria" placeholder="Ej. Transporte, Servicios">
+
+      <div class="modal-buttons">
+        <button class="btn-cancel" (click)="mostrarModalGasto = false">Cancelar</button>
+        <button class="btn-save" (click)="guardarGasto()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,21 +1,20 @@
 <div class="dashboard-container">
-  
   <aside class="sidebar">
     <div class="logo-section">
-      <img src="/images/LogoFintrax.png" alt="FINTRAX" class="logo">
+      <img src="/images/LogoFintrax.png" alt="Fintrax" class="logo" />
       <h3>FINTRAX</h3>
     </div>
 
     <nav class="menu">
       <a routerLink="/gestor" class="active">Inicio</a>
       <a routerLink="/ingresos">Ingresos</a>
-      <a href="#">Gastos</a>
-      <a href="#">Movimientos</a>
+      <a routerLink="/gastos">Gastos</a>
+      <a routerLink="/movimientos">Movimientos</a>
     </nav>
 
     <div class="user-profile">
       <div class="user-info">
-        <div class="avatar">{{ usuario.nombre.charAt(0) || 'U' }}</div>
+        <span class="avatar">U</span>
         <div>
           <p class="user-name">{{ usuario.nombre }}</p>
           <p class="user-email">{{ usuario.email }}</p>
@@ -26,7 +25,6 @@
   </aside>
 
   <main class="main-content">
-
     <header class="top-header">
       <div>
         <h1>Hola, {{ usuario.nombre }} 👋</h1>
@@ -34,85 +32,87 @@
       </div>
       <div class="header-actions">
         <button class="btn-icon">🔔</button>
-        <button class="btn-icon avatar-btn">👤</button>
+        <button class="btn-icon">👤</button>
       </div>
     </header>
 
-    <section class="summary-cards">
+    <div class="summary-cards">
       <div class="card">
         <div class="card-icon green-icon">↑</div>
         <div class="card-data">
           <p>Ingresos</p>
-          <h3 class="text-green">Q {{ resumen.ingresos | number:'1.2-2' }}</h3>
+          <h3 class="text-green">Q {{ totalIngresos | number:'1.2-2' }}</h3>
         </div>
       </div>
+
       <div class="card">
         <div class="card-icon yellow-icon">↓</div>
         <div class="card-data">
           <p>Gastos</p>
-          <h3 class="text-yellow">Q {{ resumen.gastos | number:'1.2-2' }}</h3>
+          <h3 class="text-yellow">Q {{ totalGastos | number:'1.2-2' }}</h3>
         </div>
       </div>
+
       <div class="card">
         <div class="card-icon dark-icon">⚖️</div>
         <div class="card-data">
           <p>Balance</p>
-          <h3>Q {{ resumen.balance | number:'1.2-2' }}</h3>
+          <h3>Q {{ balance | number:'1.2-2' }}</h3>
         </div>
       </div>
-    </section>
+    </div>
 
-    <section class="middle-section">
-      
-      <!-- Panel de Gráfica Dinámica -->
-      <div class="panel chart-panel">
+    <div class="middle-section">
+      <section class="panel">
         <h3>Resumen financiero</h3>
         <div class="donut-chart" [style.background]="fondoDonut">
           <div class="donut-hole">
             <p>Balance</p>
-            <h3>Q {{ resumen.balance | number:'1.2-2' }}</h3>
+            <h3>Q {{ balance | number:'1.2-2' }}</h3>
           </div>
         </div>
+
         <div class="chart-legend">
           <div class="legend-item">
-            <span class="dot green-dot"></span> Ingresos <span>{{ porcentajeIngresos }}%</span>
+            <span class="dot green-dot"></span>
+            <span>Ingresos</span>
+            <span>{{ porcentajeIngresos }}%</span>
           </div>
           <div class="legend-item">
-            <span class="dot yellow-dot"></span> Gastos <span>{{ porcentajeGastos }}%</span>
+            <span class="dot yellow-dot"></span>
+            <span>Gastos</span>
+            <span>{{ porcentajeGastos }}%</span>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- Panel de Movimientos Recientes Dinámicos -->
-      <div class="panel list-panel">
+      <section class="panel">
         <div class="list-header">
           <h3>Movimientos recientes</h3>
-          <a href="#" class="view-all">Ver todos ></a>
+          <a routerLink="/movimientos" class="view-all">Ver todos ></a>
         </div>
-        
-        <div class="transaction-list">
-          <div *ngIf="movimientos.length === 0" class="empty-state">
-            <p>No tienes movimientos registrados todavía.</p>
-          </div>
 
-          <div *ngFor="let item of movimientos" class="transaction-item">
-            <div style="display: flex; flex-direction: column;">
-              <span style="font-weight: 500;">{{ item.titulo }}</span>
-              <span style="font-size: 0.75rem; color: #8c9ba5;">{{ item.fecha | date:'dd/MM/yyyy' }}</span>
+        <div class="empty-state" *ngIf="movimientosRecientes.length === 0">
+          No hay movimientos registrados
+        </div>
+
+        <div class="transaction-list" *ngIf="movimientosRecientes.length > 0">
+          <div class="transaction-item" *ngFor="let m of movimientosRecientes">
+            <div>
+              <strong>{{ m.titulo }}</strong>
+              <p class="subtitle" style="margin: 3px 0 0; font-size: 12px;">{{ m.fecha | date:'dd/MM/yyyy' }}</p>
             </div>
-            <span [class.text-green]="item.tipo === 'ingreso'" [class.text-yellow]="item.tipo === 'gasto'" style="font-weight: bold;">
-              {{ item.tipo === 'ingreso' ? '+' : '-' }} Q {{ item.monto | number:'1.2-2' }}
+            <span [ngClass]="m.tipo === 'ingreso' ? 'text-green' : 'text-yellow'" style="font-weight: bold; font-size: 15px;">
+              {{ m.tipo === 'ingreso' ? '+ Q ' : '- Q ' }}{{ m.monto | number:'1.2-2' }}
             </span>
           </div>
         </div>
-      </div>
+      </section>
+    </div>
 
-    </section>
-
-    <section class="action-buttons">
-      <button class="btn-yellow">+ Nuevo gasto</button>
-      <button routerLink="/ingresos" class="btn-green">+ Nuevo ingreso</button>
-    </section>
-
+    <footer class="action-buttons">
+      <button class="btn-yellow" routerLink="/gastos">+ Nuevo gasto</button>
+      <button class="btn-green" routerLink="/ingresos">+ Nuevo ingreso</button>
+    </footer>
   </main>
 </div>
