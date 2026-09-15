@@ -5,7 +5,6 @@ export const getIngresos = async (req: any, res: Response): Promise<any> => {
   try {
     const usuarioId = req.usuario.id;
 
-    // 1. Total acumulado
     const totalQuery = await database.query(
       'SELECT COALESCE(SUM(monto), 0) AS total FROM ingresos WHERE usuario_id = $1',
       [usuarioId]
