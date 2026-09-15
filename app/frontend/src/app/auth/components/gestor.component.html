@@ -27,7 +27,7 @@
   <main class="main-content">
     <header class="top-header">
       <div>
-        <h1>Hola, {{ usuario.nombre }} 👋</h1>
+        <h1>Hola, {{ usuario.nombre }}</h1>
         <p class="subtitle">Aquí tienes el resumen de tus finanzas.</p>
       </div>
       <div class="header-actions">
@@ -38,7 +38,7 @@
 
     <div class="summary-cards">
       <div class="card">
-        <div class="card-icon green-icon">↑</div>
+        <div class="card-icon green-icon"></div>
         <div class="card-data">
           <p>Ingresos</p>
           <h3 class="text-green">Q {{ totalIngresos | number:'1.2-2' }}</h3>
@@ -46,7 +46,7 @@
       </div>
 
       <div class="card">
-        <div class="card-icon yellow-icon">↓</div>
+        <div class="card-icon yellow-icon"></div>
         <div class="card-data">
           <p>Gastos</p>
           <h3 class="text-yellow">Q {{ totalGastos | number:'1.2-2' }}</h3>
@@ -54,7 +54,7 @@
       </div>
 
       <div class="card">
-        <div class="card-icon dark-icon">⚖️</div>
+        <div class="card-icon dark-icon"></div>
         <div class="card-data">
           <p>Balance</p>
           <h3>Q {{ balance | number:'1.2-2' }}</h3>
@@ -103,7 +103,7 @@
               <p class="subtitle" style="margin: 3px 0 0; font-size: 12px;">{{ m.fecha | date:'dd/MM/yyyy' }}</p>
             </div>
             <span [ngClass]="m.tipo === 'ingreso' ? 'text-green' : 'text-yellow'" style="font-weight: bold; font-size: 15px;">
-              {{ m.tipo === 'ingreso' ? '+ Q ' : '- Q ' }}{{ m.monto | number:'1.2-2' }}
+              Q {{ m.monto | number:'1.2-2' }}
             </span>
           </div>
         </div>

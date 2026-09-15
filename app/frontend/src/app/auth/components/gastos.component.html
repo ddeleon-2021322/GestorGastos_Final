@@ -37,7 +37,7 @@
         <h3>Resumen de Gastos Totales</h3>
         <div class="resumen-body">
           <div class="indicador-gasto">
-            <span class="signo-negativo">-</span>
+            <span class="signo-negativo"></span>
           </div>
           <div class="cifras">
             <span class="label">Total Gastos</span>
@@ -88,7 +88,7 @@
           <div class="gasto-row" *ngFor="let t of transacciones | slice:0:5">
             <span class="bullet-indicador"></span>
             <div class="gasto-detalle">
-              <strong class="gasto-valor">-Q {{ t.monto | number:'1.2-2' }}</strong>
+              <strong class="gasto-valor">Q {{ t.monto | number:'1.2-2' }}</strong>
               <span class="gasto-sep">/</span>
               <span class="gasto-titulo">{{ t.titulo }}</span>
               <span class="gasto-sep">/</span>
@@ -109,19 +109,35 @@
   <div class="modal-backdrop" *ngIf="mostrarModalGasto">
     <div class="modal-card">
       <h3>Registrar Gasto</h3>
+
+      <div style="background-color: #f3f4f6; padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center;">
+        <span>Saldo disponible:</span>
+        <strong [style.color]="(totalIngresos - totalGastos) > 0 ? '#056E4B' : '#dc2626'">
+          Q {{ (totalIngresos - totalGastos) | number:'1.2-2' }}
+        </strong>
+      </div>
       
       <label>Concepto</label>
       <input type="text" [(ngModel)]="nuevoGasto.titulo" placeholder="Ej. Combustible, Renta">
 
       <label>Monto (Q)</label>
-      <input type="number" [(ngModel)]="nuevoGasto.monto" placeholder="0.00">
+      <input type="number" [(ngModel)]="nuevoGasto.monto" placeholder="0.00" min="0.01" step="0.01">
+
+      <p *ngIf="nuevoGasto.monto > (totalIngresos - totalGastos)" style="color: #dc2626; font-size: 0.85rem; margin-top: 4px; margin-bottom: 8px;">
+        El monto excede tu saldo disponible (Q {{ (totalIngresos - totalGastos) | number:'1.2-2' }}).
+      </p>
 
       <label>Categoría</label>
       <input type="text" [(ngModel)]="nuevoGasto.categoria" placeholder="Ej. Transporte, Servicios">
 
       <div class="modal-buttons">
         <button class="btn-cancel" (click)="mostrarModalGasto = false">Cancelar</button>
-        <button class="btn-save" (click)="guardarGasto()">Guardar</button>
+        <button 
+          class="btn-save" 
+          (click)="guardarGasto()" 
+          [disabled]="nuevoGasto.monto > (totalIngresos - totalGastos) || nuevoGasto.monto <= 0">
+          Guardar
+        </button>
       </div>
     </div>
   </div>

@@ -38,6 +38,7 @@ export class GastosComponent implements OnInit {
   usuario = { nombre: 'Usuario', email: 'usuario@email.com' };
   fechaHoy: string = '';
   totalGastos: number = 0;
+  totalIngresos: number = 0;
 
   transacciones: TransaccionGasto[] = [];
   categorias: CategoriaGasto[] = [];
@@ -49,6 +50,7 @@ export class GastosComponent implements OnInit {
 
   private isBrowser: boolean;
   private apiUrlGastos = 'http://localhost:3000/api/gastos';
+  private apiUrlIngresos = 'http://localhost:3000/api/ingresos';
 
   private readonly coloresGastos: string[] = ['#C38C28', '#00193C', '#056E4B'];
 
@@ -69,6 +71,7 @@ export class GastosComponent implements OnInit {
         return;
       }
       this.establecerFechaActual();
+      this.cargarIngresos();
       this.cargarGastos();
     }
   }
@@ -81,6 +84,19 @@ export class GastosComponent implements OnInit {
   private getAuthHeaders(): HttpHeaders {
     const token = localStorage.getItem('miToken') || '';
     return new HttpHeaders().set('Authorization', `Bearer ${token}`);
+  }
+
+  cargarIngresos(): void {
+    this.http.get<any>(this.apiUrlIngresos, { headers: this.getAuthHeaders() }).subscribe({
+      next: (data) => {
+        if (Array.isArray(data)) {
+          this.totalIngresos = data.reduce((sum, item) => sum + (Number(item.monto) || 0), 0);
+        } else if (data && data.total !== undefined) {
+          this.totalIngresos = Number(data.total) || 0;
+        }
+      },
+      error: (err) => console.error('Error al consultar ingresos:', err)
+    });
   }
 
   cargarGastos(): void {
@@ -102,11 +118,19 @@ export class GastosComponent implements OnInit {
   }
 
   guardarGasto(): void {
-    if (!this.nuevoGasto.titulo || Number(this.nuevoGasto.monto) <= 0) return;
+    const montoGasto = Number(this.nuevoGasto.monto);
+    if (!this.nuevoGasto.titulo || montoGasto <= 0) return;
+
+    const saldoDisponible = this.totalIngresos - this.totalGastos;
+
+    if (montoGasto > saldoDisponible) {
+      alert(`No puedes gastar más de lo que tienes ingresado.\nSaldo disponible: Q ${saldoDisponible.toFixed(2)}`);
+      return;
+    }
 
     const payload = {
       titulo: this.nuevoGasto.titulo,
-      monto: Number(this.nuevoGasto.monto),
+      monto: montoGasto,
       categoria: this.nuevoGasto.categoria || 'Otros'
     };
 
@@ -115,8 +139,12 @@ export class GastosComponent implements OnInit {
         this.mostrarModalGasto = false;
         this.nuevoGasto = { titulo: '', monto: 0, categoria: '' };
         this.cargarGastos();
+        this.cargarIngresos();
       },
-      error: (err) => console.error('Error al guardar gasto:', err)
+      error: (err) => {
+        const mensaje = err.error?.message || 'Error al procesar el gasto';
+        alert(mensaje);
+      }
     });
   }
 
