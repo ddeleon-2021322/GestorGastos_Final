@@ -1,5 +1,4 @@
 <div class="split-login-container">
-
   <div class="left-panel">
     <div class="branding">
       <img src="/images/LogoFintrax.png" alt="Logo de la app" class="logo">
@@ -15,13 +14,11 @@
 
   <div class="right-panel">
     <div class="form-wrapper">
-      
       <p class="welcome-text">Bienvenido De Nuevo</p>
       <h2>Iniciar Sesión</h2>
       <p class="form-subtitle">Por favor, ingrese sus credenciales para continuar.</p>
       
-      <form #loginForm="ngForm" (ngSubmit)="loginForm.form.valid && onLogin()">
-        
+      <form (ngSubmit)="onLogin()">
         <div class="form-group">
           <label for="email">Correo Electrónico:</label>
           <input 
@@ -48,19 +45,17 @@
           {{ errorMessage }}
         </p>
 
-        <button type="submit" class="btn-submit" [disabled]="!loginForm.valid">
+        <button type="button" class="btn-submit" (click)="onLogin()">
           Iniciar Sesión <span>&rarr;</span>
         </button>
       </form>
 
-      <!-- Divisor visual -->
       <div style="display: flex; align-items: center; text-align: center; margin: 18px 0;">
         <div style="flex: 1; border-bottom: 1px solid #e5e7eb;"></div>
         <span style="padding: 0 10px; color: #6b7280; font-size: 0.85rem;">o</span>
         <div style="flex: 1; border-bottom: 1px solid #e5e7eb;"></div>
       </div>
 
-      <!-- Botón oficial de Google Identity Services -->
       <div style="display: flex; justify-content: center; width: 100%; margin-bottom: 15px;">
         <div id="google-btn"></div>
       </div>
@@ -69,8 +64,6 @@
         <p>¿No tienes cuenta? <a routerLink="/register">Regístrate aquí</a></p>
         <p class="secure-text">Tus datos están protegidos</p>
       </div>
-
     </div>
   </div>
-
 </div>
